@@ -22,7 +22,7 @@ export default function RegisterScreen({ navigation }) {
     setLoading(true);
     // Kita simpan nama di metadata user auth supabase
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
       options: {
         data: {
@@ -34,8 +34,10 @@ export default function RegisterScreen({ navigation }) {
     if (error) {
       Alert.alert('Register Gagal', error.message);
     } else {
-      Alert.alert('Berhasil', 'Pendaftaran berhasil. Silakan cek email Anda atau coba login jika auto-login aktif.');
-      navigation.navigate('Login');
+      Alert.alert('Berhasil', 'Pendaftaran berhasil. Coba login atau Anda akan dialihkan otomatis.');
+      if (!data.session) {
+        navigation.navigate('Login');
+      }
     }
     setLoading(false);
   }

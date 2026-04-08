@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../store/useCartStore';
 import { ShoppingCart } from 'lucide-react-native';
+import { useAuthStore } from '../store/useAuthStore';
 
 export default function HomeScreen({ navigation }) {
   const [foods, setFoods] = useState([]);
@@ -12,6 +13,7 @@ export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   const cartTotalItems = useCartStore(state => state.getTotalItems());
+  const user = useAuthStore(state => state.user);
 
   useEffect(() => {
     fetchCategories();
@@ -70,7 +72,7 @@ export default function HomeScreen({ navigation }) {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Halo, Lapar?</Text>
+          <Text style={styles.greeting}>Halo {user?.user_metadata?.full_name ? user.user_metadata.full_name.split(' ')[0] : ''}, Lapar?</Text>
           <Text style={styles.subtitle}>Pilih makanan kesukaanmu</Text>
         </View>
         <TouchableOpacity style={styles.cartBtn} onPress={() => navigation.navigate('Cart')}>
