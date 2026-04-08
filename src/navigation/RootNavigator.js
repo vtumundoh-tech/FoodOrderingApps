@@ -11,7 +11,11 @@ import FoodDetailScreen from '../screens/FoodDetailScreen';
 import CartScreen from '../screens/CartScreen';
 import OrderHistoryScreen from '../screens/OrderHistoryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import AdminDashboardScreen from '../screens/AdminDashboardScreen';
 import AdminOrderScreen from '../screens/AdminOrderScreen';
+import AdminCategoryScreen from '../screens/AdminCategoryScreen';
+import AdminFoodListScreen from '../screens/AdminFoodListScreen';
+import AdminFoodFormScreen from '../screens/AdminFoodFormScreen';
 
 import { useAuthStore } from '../store/useAuthStore';
 import { supabase } from '../lib/supabase';
@@ -52,18 +56,40 @@ export default function RootNavigator() {
             // =========================
             // ADMIN STACK
             // =========================
-            <Stack.Screen
-              name="AdminOrder"
-              component={AdminOrderScreen}
-              options={{
-                title: 'Monitoring Pesanan',
-                headerRight: () => (
-                  <TouchableOpacity onPress={logout} style={{ marginRight: 10 }}>
-                    <LogOut color="#ff4757" size={24} />
-                  </TouchableOpacity>
-                ),
-              }}
-            />
+            <>
+              <Stack.Screen
+                name="AdminDashboard"
+                component={AdminDashboardScreen}
+                options={{
+                  title: 'Terminal Admin Utama',
+                  headerRight: () => (
+                    <TouchableOpacity onPress={logout} style={{ marginRight: 10 }}>
+                      <LogOut color="#ff4757" size={24} />
+                    </TouchableOpacity>
+                  ),
+                }}
+              />
+              <Stack.Screen
+                name="AdminOrder"
+                component={AdminOrderScreen}
+                options={{ title: 'Kelola Pesanan' }}
+              />
+              <Stack.Screen
+                name="AdminCategory"
+                component={AdminCategoryScreen}
+                options={{ title: 'Kelola Kategori' }}
+              />
+              <Stack.Screen
+                name="AdminFoodList"
+                component={AdminFoodListScreen}
+                options={{ title: 'Kelola Makanan' }}
+              />
+              <Stack.Screen
+                name="AdminFoodForm"
+                component={AdminFoodFormScreen}
+                options={{ title: 'Formulir Makanan' }}
+              />
+            </>
           ) : (
             // =========================
             // USER STACK
@@ -74,7 +100,7 @@ export default function RootNavigator() {
                 component={HomeScreen}
                 options={({ navigation }) => ({
                   headerShown: true,
-                  title: 'Food App',
+                  title: 'Kelompok 5: Food Ordering',
                   headerRight: () => (
                     <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={{ marginRight: 10 }}>
                       <User color="#333" size={24} />
