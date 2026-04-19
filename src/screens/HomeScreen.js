@@ -18,12 +18,17 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     fetchCategories();
     fetchFoods();
-  }, []);
+  }, [user]);
 
   async function fetchCategories() {
     const { data, error } = await supabase.from('categories').select('*');
-    if (!error) {
-      setCategories(data);
+    if (!error && data) {
+      if (user?.is_anonymous) {
+        // Tamu tidak boleh melihat kategori Promo
+        setCategories(data.filter(c => !c.name.toLowerCase().includes('promo')));
+      } else {
+        setCategories(data);
+      }
     }
   }
 
@@ -56,11 +61,11 @@ export default function HomeScreen({ navigation }) {
   );
 
   const renderFood = ({ item }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.foodCard}
       onPress={() => navigation.navigate('FoodDetail', { food: item })}
     >
-      <Image source={{ uri: item.image_url || 'https://picsum.photos/400/300' }} style={styles.foodImage} />
+      <Image source={{ uri: item.image_url || 'https://i.pinimg.com/736x/8a/e9/e9/8ae9e92fa4e69967aa61bf2bda967b7b.jpg' }} style={styles.foodImage} />
       <View style={styles.foodInfo}>
         <Text style={styles.foodName}>{item.name}</Text>
         <Text style={styles.foodPrice}>Rp {item.price.toLocaleString('id-ID')}</Text>
@@ -72,7 +77,7 @@ export default function HomeScreen({ navigation }) {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Halo {user?.user_metadata?.full_name ? user.user_metadata.full_name.split(' ')[0] : ''}, Lapar?</Text>
+          <Text style={styles.greeting}>Halo {user?.is_anonymous ? 'Tamu' : (user?.user_metadata?.full_name ? user.user_metadata.full_name.split(' ')[0] : 'Member')}, Lapar?</Text>
           <Text style={styles.subtitle}>Pilih makanan kesukaanmu</Text>
         </View>
         <TouchableOpacity style={styles.cartBtn} onPress={() => navigation.navigate('Cart')}>

@@ -2,10 +2,28 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useAuthStore } from '../store/useAuthStore';
 import { useCartStore } from '../store/useCartStore';
+import { supabase } from '../lib/supabase';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function ProfileScreen({ navigation }) {
   const { user, logout } = useAuthStore();
   const clearCart = useCartStore(state => state.clearCart);
+  const [points, setPoints] = React.useState(0);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user && !user.is_anonymous) {
+        fetchPoints();
+      }
+    }, [user])
+  );
+
+  const fetchPoints = async () => {
+    const { data } = await supabase.from('profiles').select('points').eq('id', user.id).single();
+    if (data) {
+      setPoints(data.points || 0);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -33,8 +51,14 @@ export default function ProfileScreen({ navigation }) {
             {user?.user_metadata?.full_name ? user.user_metadata.full_name.charAt(0).toUpperCase() : 'U'}
           </Text>
         </View>
-        <Text style={styles.name}>{user?.user_metadata?.full_name || 'User'}</Text>
-        <Text style={styles.email}>{user?.email}</Text>
+        <Text style={styles.name}>{user?.is_anonymous ? 'Pelanggan Tamu' : (user?.user_metadata?.full_name || 'User')}</Text>
+        <Text style={styles.email}>{user?.is_anonymous ? 'guest@local' : user?.email}</Text>
+        
+        {!user?.is_anonymous && (
+          <View style={styles.pointsBadge}>
+            <Text style={styles.pointsText}>🌟 {points.toLocaleString('id-ID')} Poin</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.menuContainer}>
@@ -116,4 +140,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  pointsBadge: {
+    marginTop: 12,
+    backgroundColor: '#fff0f2',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ffccd5',
+  },
+  pointsText: {
+    color: '#ff4757',
+    fontWeight: 'bold',
+    fontSize: 14,
+  }
 });

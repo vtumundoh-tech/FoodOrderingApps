@@ -31,6 +31,18 @@ export default function LoginScreen({ navigation }) {
     setLoading(false);
   }
 
+  async function handleGuestLogin() {
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error) {
+      Alert.alert('Gagal Masuk', error.message);
+    } else {
+      setSession(data.session);
+      setUser(data.user);
+    }
+    setLoading(false);
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Selamat Datang!</Text>
@@ -62,6 +74,10 @@ export default function LoginScreen({ navigation }) {
 
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
         <Text style={styles.linkText}>Belum punya akun? Daftar di sini</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={handleGuestLogin} style={{ marginTop: 20 }}>
+        <Text style={styles.guestText}>Lanjutkan sebagai Tamu (Guest)</Text>
       </TouchableOpacity>
     </View>
   );
@@ -112,5 +128,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 24,
     fontSize: 14,
+  },
+  guestText: {
+    color: '#747d8c',
+    textAlign: 'center',
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });

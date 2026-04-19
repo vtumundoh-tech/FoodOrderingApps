@@ -6,11 +6,12 @@ export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleRegister() {
-    if (!email || !password || !name) {
-      Alert.alert('Error', 'Semua kolom wajib diisi.');
+    if (!email || !password || !name || !phone) {
+      Alert.alert('Error', 'Semua kolom wajib diisi (Termasuk No HP).');
       return;
     }
 
@@ -20,13 +21,13 @@ export default function RegisterScreen({ navigation }) {
     }
 
     setLoading(true);
-    // Kita simpan nama di metadata user auth supabase
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
         data: {
-          full_name: name
+          full_name: name,
+          phone: phone.trim()
         }
       }
     });
@@ -52,6 +53,13 @@ export default function RegisterScreen({ navigation }) {
         placeholder="Nama Lengkap"
         value={name}
         onChangeText={setName}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Nomor Handphone"
+        value={phone}
+        onChangeText={setPhone}
+        keyboardType="phone-pad"
       />
       <TextInput
         style={styles.input}
