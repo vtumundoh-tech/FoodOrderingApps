@@ -7,7 +7,8 @@ import { useFocusEffect } from '@react-navigation/native';
 export default function OrderHistoryScreen() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // 'all', 'today', 'week', 'month'
+  const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'pending', 'processed', 'completed', 'cancelled'
   const user = useAuthStore(state => state.user);
 
   const fetchOrders = async () => {
@@ -19,19 +20,24 @@ export default function OrderHistoryScreen() {
       .order('created_at', { ascending: false });
 
     // Terapkan Filter Tanggal
-    if (filter !== 'all') {
+    if (dateFilter !== 'all') {
       const now = new Date();
       let pastDate = new Date();
 
-      if (filter === 'today') {
+      if (dateFilter === 'today') {
         pastDate.setHours(0, 0, 0, 0);
-      } else if (filter === 'week') {
+      } else if (dateFilter === 'week') {
         pastDate.setDate(now.getDate() - 7);
-      } else if (filter === 'month') {
+      } else if (dateFilter === 'month') {
         pastDate.setMonth(now.getMonth() - 1);
       }
 
       query = query.gte('created_at', pastDate.toISOString());
+    }
+
+    // Terapkan Filter Status
+    if (statusFilter !== 'all') {
+      query = query.eq('status', statusFilter);
     }
 
     const { data, error } = await query;
@@ -45,15 +51,33 @@ export default function OrderHistoryScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchOrders();
-    }, [filter])
+    }, [dateFilter, statusFilter])
+  );
+
+  const renderDateFilterButton = (id, label) => (
+    <TouchableOpacity
+      style={[styles.filterBtn, dateFilter === id && styles.filterBtnActive]}
+      onPress={() => setDateFilter(id)}
+    >
+      <Text style={[styles.filterText, dateFilter === id && styles.filterTextActive]}>{label}</Text>
+    </TouchableOpacity>
+  );
+
+  const renderStatusFilterButton = (id, label) => (
+    <TouchableOpacity
+      style={[styles.filterBtn, statusFilter === id && styles.filterBtnActive]}
+      onPress={() => setStatusFilter(id)}
+    >
+      <Text style={[styles.filterText, statusFilter === id && styles.filterTextActive]}>{label}</Text>
+    </TouchableOpacity>
   );
 
   const renderFilterButton = (id, label) => (
     <TouchableOpacity
-      style={[styles.filterBtn, filter === id && styles.filterBtnActive]}
-      onPress={() => setFilter(id)}
+      style={[styles.filterBtn, dateFilter === id && styles.filterBtnActive]}
+      onPress={() => setDateFilter(id)}
     >
-      <Text style={[styles.filterText, filter === id && styles.filterTextActive]}>{label}</Text>
+      <Text style={[styles.filterText, dateFilter === id && styles.filterTextActive]}>{label}</Text>
     </TouchableOpacity>
   );
 
@@ -106,11 +130,23 @@ export default function OrderHistoryScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {renderFilterButton('all', 'Semua')}
-          {renderFilterButton('today', 'Hari Ini')}
-          {renderFilterButton('week', '7 Hari')}
-          {renderFilterButton('month', '30 Hari')}
+        <Text style={styles.filterLabel}>📅 Filter Tanggal:</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+          {renderDateFilterButton('all', 'Semua')}
+          {renderDateFilterButton('today', 'Hari Ini')}
+          {renderDateFilterButton('week', '7 Hari')}
+          {renderDateFilterButton('month', '30 Hari')}
+        </ScrollView>
+      </View>
+
+      <View style={styles.filterContainer}>
+        <Text style={styles.filterLabel}>📊 Filter Status:</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+          {renderStatusFilterButton('all', 'Semua')}
+          {renderStatusFilterButton('pending', 'Menunggu')}
+          {renderStatusFilterButton('processed', 'Diproses')}
+          {renderStatusFilterButton('completed', 'Selesai')}
+          {renderStatusFilterButton('cancelled', 'Dibatalkan')}
         </ScrollView>
       </View>
 
@@ -143,6 +179,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#dfe4ea',
+  },
+  filterLabel: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#2f3542',
+    marginBottom: 8,
+  },
+  filterScroll: {
+    flexGrow: 0,
   },
   filterBtn: {
     paddingHorizontal: 16,

@@ -7,7 +7,8 @@ export default function AdminOrderScreen() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [phoneInputs, setPhoneInputs] = useState({});
-  const [filter, setFilter] = useState('all'); // 'all', 'today', 'week', 'month'
+  const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'pending', 'processed', 'completed', 'cancelled'
 
   const fetchAllOrders = async () => {
     setLoading(true);
@@ -16,18 +17,24 @@ export default function AdminOrderScreen() {
       .select('*, order_items(*, foods(name))')
       .order('created_at', { ascending: false });
 
-    if (filter !== 'all') {
+    // Terapkan Filter Tanggal
+    if (dateFilter !== 'all') {
       const now = new Date();
       let pastDate = new Date();
 
-      if (filter === 'today') {
+      if (dateFilter === 'today') {
         pastDate.setHours(0, 0, 0, 0);
-      } else if (filter === 'week') {
+      } else if (dateFilter === 'week') {
         pastDate.setDate(now.getDate() - 7);
-      } else if (filter === 'month') {
+      } else if (dateFilter === 'month') {
         pastDate.setMonth(now.getMonth() - 1);
       }
       query = query.gte('created_at', pastDate.toISOString());
+    }
+
+    // Terapkan Filter Status
+    if (statusFilter !== 'all') {
+      query = query.eq('status', statusFilter);
     }
 
     const { data, error } = await query;
@@ -40,7 +47,7 @@ export default function AdminOrderScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchAllOrders();
-    }, [filter])
+    }, [dateFilter, statusFilter])
   );
 
   const updateOrderStatus = async (orderId, newStatus) => {
@@ -113,12 +120,30 @@ export default function AdminOrderScreen() {
     fetchAllOrders();
   };
 
+  const renderDateFilterButton = (id, label) => (
+    <TouchableOpacity
+      style={[styles.filterBtn, dateFilter === id && styles.filterBtnActive]}
+      onPress={() => setDateFilter(id)}
+    >
+      <Text style={[styles.filterText, dateFilter === id && styles.filterTextActive]}>{label}</Text>
+    </TouchableOpacity>
+  );
+
+  const renderStatusFilterButton = (id, label) => (
+    <TouchableOpacity
+      style={[styles.filterBtn, statusFilter === id && styles.filterBtnActive]}
+      onPress={() => setStatusFilter(id)}
+    >
+      <Text style={[styles.filterText, statusFilter === id && styles.filterTextActive]}>{label}</Text>
+    </TouchableOpacity>
+  );
+
   const renderFilterButton = (id, label) => (
     <TouchableOpacity
-      style={[styles.filterBtn, filter === id && styles.filterBtnActive]}
-      onPress={() => setFilter(id)}
+      style={[styles.filterBtn, dateFilter === id && styles.filterBtnActive]}
+      onPress={() => setDateFilter(id)}
     >
-      <Text style={[styles.filterText, filter === id && styles.filterTextActive]}>{label}</Text>
+      <Text style={[styles.filterText, dateFilter === id && styles.filterTextActive]}>{label}</Text>
     </TouchableOpacity>
   );
 
@@ -216,11 +241,23 @@ export default function AdminOrderScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {renderFilterButton('all', 'Semua')}
-          {renderFilterButton('today', 'Hari Ini')}
-          {renderFilterButton('week', '7 Hari')}
-          {renderFilterButton('month', '30 Hari')}
+        <Text style={styles.filterLabel}>📅 Filter Tanggal:</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+          {renderDateFilterButton('all', 'Semua')}
+          {renderDateFilterButton('today', 'Hari Ini')}
+          {renderDateFilterButton('week', '7 Hari')}
+          {renderDateFilterButton('month', '30 Hari')}
+        </ScrollView>
+      </View>
+
+      <View style={styles.filterContainer}>
+        <Text style={styles.filterLabel}>📊 Filter Status:</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+          {renderStatusFilterButton('all', 'Semua')}
+          {renderStatusFilterButton('pending', 'Menunggu')}
+          {renderStatusFilterButton('processed', 'Diproses')}
+          {renderStatusFilterButton('completed', 'Selesai')}
+          {renderStatusFilterButton('cancelled', 'Dibatalkan')}
         </ScrollView>
       </View>
 
@@ -245,6 +282,15 @@ export default function AdminOrderScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f1f2f6' },
   filterContainer: { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#dfe4ea' },
+  filterLabel: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#2f3542',
+    marginBottom: 8,
+  },
+  filterScroll: {
+    flexGrow: 0,
+  },
   filterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f1f2f6', marginRight: 8 },
   filterBtnActive: { backgroundColor: '#ff4757' },
   filterText: { color: '#57606f', fontWeight: 'bold', fontSize: 13 },

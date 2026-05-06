@@ -1,4 +1,4 @@
-s-- A. Create Profiles Table for Points & Phone Number
+-- A. Create Profiles Table for Points & Phone Number
 CREATE TABLE profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   phone text UNIQUE,

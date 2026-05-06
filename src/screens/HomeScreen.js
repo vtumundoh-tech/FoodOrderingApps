@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../store/useCartStore';
-import { ShoppingCart } from 'lucide-react-native';
+import { ShoppingCart, Search, Clock } from 'lucide-react-native';
 import { useAuthStore } from '../store/useAuthStore';
 
 export default function HomeScreen({ navigation }) {
@@ -11,6 +11,7 @@ export default function HomeScreen({ navigation }) {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const cartTotalItems = useCartStore(state => state.getTotalItems());
   const user = useAuthStore(state => state.user);
@@ -32,12 +33,18 @@ export default function HomeScreen({ navigation }) {
     }
   }
 
-  async function fetchFoods(categoryId) {
+  async function fetchFoods(categoryId, search = '') {
     setLoading(true);
     let query = supabase.from('foods').select('*').eq('is_available', true);
+    
     if (categoryId) {
       query = query.eq('category_id', categoryId);
     }
+    
+    if (search.trim()) {
+      query = query.ilike('name', `%${search}%`);
+    }
+    
     const { data, error } = await query;
     if (!error) {
       setFoods(data);
@@ -51,7 +58,7 @@ export default function HomeScreen({ navigation }) {
       onPress={() => {
         const newCat = selectedCategory === item.id ? null : item.id;
         setSelectedCategory(newCat);
-        fetchFoods(newCat);
+        fetchFoods(newCat, searchQuery);
       }}
     >
       <Text style={[styles.categoryText, selectedCategory === item.id && styles.categoryTextActive]}>
@@ -59,6 +66,16 @@ export default function HomeScreen({ navigation }) {
       </Text>
     </TouchableOpacity>
   );
+
+  const handleAllCategory = () => {
+    setSelectedCategory(null);
+    fetchFoods(null, searchQuery);
+  };
+
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+    fetchFoods(selectedCategory, text);
+  };
 
   const renderFood = ({ item }) => (
     <TouchableOpacity
@@ -80,14 +97,30 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.greeting}>Halo {user?.is_anonymous ? 'Tamu' : (user?.user_metadata?.full_name ? user.user_metadata.full_name.split(' ')[0] : 'Member')}, Lapar?</Text>
           <Text style={styles.subtitle}>Pilih makanan kesukaanmu</Text>
         </View>
-        <TouchableOpacity style={styles.cartBtn} onPress={() => navigation.navigate('Cart')}>
-          <ShoppingCart color="#333" size={24} />
-          {cartTotalItems > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{cartTotalItems}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.historyBtn} onPress={() => navigation.navigate('OrderHistory')}>
+            <Clock color="#333" size={24} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.cartBtn} onPress={() => navigation.navigate('Cart')}>
+            <ShoppingCart color="#333" size={24} />
+            {cartTotalItems > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{cartTotalItems}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.searchContainer}>
+        <Search color="#747d8c" size={20} style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Cari makanan..."
+          value={searchQuery}
+          onChangeText={handleSearch}
+          placeholderTextColor="#bcc0cb"
+        />
       </View>
 
       <View style={styles.categoriesContainer}>
@@ -98,11 +131,25 @@ export default function HomeScreen({ navigation }) {
           renderItem={renderCategory}
           keyExtractor={item => item.id}
           contentContainerStyle={{ paddingHorizontal: 16 }}
+          ListHeaderComponent={
+            <TouchableOpacity
+              style={[styles.categoryPill, !selectedCategory && styles.categoryPillActive]}
+              onPress={handleAllCategory}
+            >
+              <Text style={[styles.categoryText, !selectedCategory && styles.categoryTextActive]}>
+                Semua
+              </Text>
+            </TouchableOpacity>
+          }
         />
       </View>
 
       {loading ? (
         <ActivityIndicator size="large" color="#ff4757" style={{ marginTop: 50 }} />
+      ) : foods.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Tidak ada makanan yang sesuai</Text>
+        </View>
       ) : (
         <FlatList
           data={foods}
@@ -137,6 +184,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#747d8c',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  historyBtn: {
+    position: 'relative',
+    padding: 8,
+  },
   cartBtn: {
     position: 'relative',
     padding: 8,
@@ -156,6 +211,25 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#f1f2f6',
+    borderRadius: 20,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 0,
+    fontSize: 14,
+    color: '#2f3542',
   },
   categoriesContainer: {
     marginVertical: 12,
@@ -182,6 +256,15 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 16,
     paddingBottom: 20,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#747d8c',
   },
   foodCard: {
     backgroundColor: '#fff',
